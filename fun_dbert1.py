@@ -2,19 +2,17 @@
 # Sentiment Analysis (inference only, no training) with DistilBERT, with and without pipelines
 
 import sys
-import time
 
 import torch
 import transformers
-import datasets
 
 MODEL_NAME = 'distilbert-base-uncased-finetuned-sst-2-english'
 
 
 ########################################################################################################################
 def print_it(a, name: str = ''):
-    # m = a.float().mean() if isinstance(a, torch.Tensor) else a.mean()
-    m = a.mean()
+    m = a.float().mean() if isinstance(a, torch.Tensor) else a.mean()
+    # m = a.mean()
     print(name, a.shape, a.dtype, a.min(), m, a.max())
 
 
@@ -71,11 +69,14 @@ def demo_no_pipe():
     # Now we run teh actual inference !
     print('\nInference demo')
     out = model(input_ids=emb_pt2['input_ids'], attention_mask=emb_pt2['attention_mask'])
+    # Or like this, but I prefer explicit keys !
+    # out = model(**emb_pt2)
+
     print('out=', out)
     print('result=', out['logits'].argmax(dim=1))  # Classification result
 
 
 ########################################################################################################################
 if __name__ == '__main__':
-    # demo_pipe()
+    demo_pipe()
     demo_no_pipe()
