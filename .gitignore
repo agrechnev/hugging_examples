@@ -1,2 +1,5 @@
 .idea
 __pycache__/
+idiot_save/
+trained_model/
+mlruns/

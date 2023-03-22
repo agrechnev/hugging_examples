@@ -62,7 +62,7 @@ def main():
     print(dset[0:2].keys())
 
     print('\nDataset Transformation 3')
-    print(dset_mapped1[0].keys())  # ['text', 'label', 'input_ids', 'attention_mask']
+    print(dset_mapped1.column_names)  # ['text', 'label', 'input_ids', 'attention_mask']
     # Now, let's set Pytorch output format
     dset_mapped1.set_format(type='torch', columns=['label', 'input_ids', 'attention_mask'])
     print(dset_mapped1[0])
@@ -70,8 +70,8 @@ def main():
     # print(dset_mapped1[0:2])
     # Delete a column
     dset_mapped1.remove_columns('text')
-    print(dset_mapped1[0].keys())  #   ['label', 'input_ids', 'attention_mask']
-    print(dset[0].keys())   # It is still in dset
+    print(dset_mapped1.column_names)  #   ['label', 'input_ids', 'attention_mask']
+    print(dset.column_names)   # It is still in dset
 
 
 
