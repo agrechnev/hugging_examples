@@ -1,0 +1,161 @@
+
+Improving Language Understanding
+by Generative Pre-Training
+Alec Radford
+OpenAI
+alec@openai.com
+Karthik Narasimhan
+OpenAI
+karthikn@openai.com
+Tim Salimans
+OpenAI
+tim@openai.com
+Ilya Sutskever
+OpenAI
+ilyasu@openai.com
+Abstract
+Natural language understanding comprises a wide range of diverse tasks such
+as textual entailment, question answering, semantic similarity assessment, and
+document classification. Although large unlabeled text corpora are abundant,
+labeled data for learning these specific tasks is scarce, making it challenging for
+discriminatively trained models to perform adequately. We demonstrate that large
+gains on these tasks can be realized by generative pre-training of a language model
+on a diverse corpus of unlabeled text, followed by discriminative fine-tuning on each
+specific task. In contrast to previous approaches, we make use of task-aware input
+transformations during fine-tuning to achieve effective transfer while requiring
+minimal changes to the model architecture. We demonstrate the effectiveness of
+our approach on a wide range of benchmarks for natural language understanding.
+Our general task-agnostic model outperforms discriminatively trained models that
+use architectures specifically crafted for each task, significantly improving upon the
+state of the art in 9 out of the 12 tasks studied. For instance, we achieve absolute
+improvements of 8.9% on commonsense reasoning (Stories Cloze Test), 5.7% on
+question answering (RACE), and 1.5% on textual entailment (MultiNLI).
+1 Introduction
+The ability to learn effectively from raw text is crucial to alleviating the dependence on supervised
+learning in natural language processing (NLP). Most deep learning methods require substantial
+amounts of manually labeled data, which restricts their applicability in many domains that suffer
+from a dearth of annotated resources [ 61 ]. In these situations, models that can leverage linguistic
+information from unlabeled data provide a valuable alternative to gathering more annotation, which
+can be time-consuming and expensive. Further, even in cases where considerable supervision
+is available, learning good representations in an unsupervised fashion can provide a significant
+performance boost. The most compelling evidence for this so far has been the extensive use of pre-
+trained word embeddings [10 , 39 , 42] to improve performance on a range of NLP tasks [ 8, 11 , 26 , 45].
+Leveraging more than word-level information from unlabeled text, however, is challenging for two
+main reasons. First, it is unclear what type of optimization objectives are most effective at learning
+text representations that are useful for transfer. Recent research has looked at various objectives
+such as language modeling [44 ], machine translation [ 38 ], and discourse coherence [22 ], with each
+method outperforming the others on different tasks.1 Second, there is no consensus on the most
+effective way to transfer these learned representations to the target task. Existing techniques involve
+a combination of making task-specific changes to the model architecture [43 , 44 ], using intricate
+learning schemes [21 ] and adding auxiliary learning objectives [ 50]. These uncertainties have made
+it difficult to develop effective semi-supervised learning approaches for language processing.
+1https://gluebenchmark.com/leaderboard
+Preprint. Work in progress.
+In this paper, we explore a semi-supervised approach for language understanding tasks using a
+combination of unsupervised pre-training and supervised fine-tuning. Our goal is to learn a universal
+representation that transfers with little adaptation to a wide range of tasks. We assume access to
+a large corpus of unlabeled text and several datasets with manually annotated training examples
+(target tasks). Our setup does not require these target tasks to be in the same domain as the unlabeled
+corpus. We employ a two-stage training procedure. First, we use a language modeling objective on
+the unlabeled data to learn the initial parameters of a neural network model. Subsequently, we adapt
+these parameters to a target task using the corresponding supervised objective.
+For our model architecture, we use the Transformer [62], which has been shown to perform strongly on
+various tasks such as machine translation [ 62 ], document generation [34 ], and syntactic parsing [29].
+This model choice provides us with a more structured memory for handling long-term dependencies in
+text, compared to alternatives like recurrent networks, resulting in robust transfer performance across
+diverse tasks. During transfer, we utilize task-specific input adaptations derived from traversal-style
+approaches [52], which process structured text input as a single contiguous sequence of tokens. As
+we demonstrate in our experiments, these adaptations enable us to fine-tune effectively with minimal
+changes to the architecture of the pre-trained model.
+We evaluate our approach on four types of language understanding tasks – natural language inference,
+question answering, semantic similarity, and text classification. Our general task-agnostic model
+outperforms discriminatively trained models that employ architectures specifically crafted for each
+task, significantly improving upon the state of the art in 9 out of the 12 tasks studied. For instance,
+we achieve absolute improvements of 8.9% on commonsense reasoning (Stories Cloze Test) [40 ],
+5.7% on question answering (RACE) [ 30 ], 1.5% on textual entailment (MultiNLI) [ 66 ] and 5.5% on
+the recently introduced GLUE multi-task benchmark [64 ]. We also analyzed zero-shot behaviors
+of the pre-trained model on four different settings and demonstrate that it acquires useful linguistic
+knowledge for downstream tasks.
+2 Related Work
+Semi-supervised learning for NLP Our work broadly falls under the category of semi-supervised
+learning for natural language. This paradigm has attracted significant interest, with applications to
+tasks like sequence labeling [ 24, 33, 57 ] or text classification [41 , 70 ]. The earliest approaches used
+unlabeled data to compute word-level or phrase-level statistics, which were then used as features in a
+supervised model [33]. Over the last few years, researchers have demonstrated the benefits of using
+word embeddings [11 , 39 , 42 ], which are trained on unlabeled corpora, to improve performance on a
+variety of tasks [8, 11 , 26 , 45 ]. These approaches, however, mainly transfer word-level information,
+whereas we aim to capture higher-level semantics.
+Recent approaches have investigated learning and utilizing more than word-level semantics from
+unlabeled data. Phrase-level or sentence-level embeddings, which can be trained using an unlabeled
+corpus, have been used to encode text into suitable vector representations for various target tasks [28 ,
+32, 1, 36, 22, 12, 56, 31].
+Unsupervised pre-training Unsupervised pre-training is a special case of semi-supervised learning
+where the goal is to find a good initialization point instead of modifying the supervised learning
+objective. Early works explored the use of the technique in image classification [ 20 , 49 , 63 ] and
+regression tasks [ 3]. Subsequent research [ 15 ] demonstrated that pre-training acts as a regularization
+scheme, enabling better generalization in deep neural networks. In recent work, the method has
+been used to help train deep neural networks on various tasks like image classification [69 ], speech
+recognition [68], entity disambiguation [17] and machine translation [48].
+The closest line of work to ours involves pre-training a neural network using a language modeling
+objective and then fine-tuning it on a target task with supervision. Dai et al. [ 13] and Howard and
+Ruder [21] follow this method to improve text classification. However, although the pre-training
+phase helps capture some linguistic information, their usage of LSTM models restricts their prediction
+ability to a short range. In contrast, our choice of transformer networks allows us to capture longer-
+range linguistic structure, as demonstrated in our experiments. Further, we also demonstrate the
+effectiveness of our model on a wider range of tasks including natural language inference, paraphrase
+detection and story completion. Other approaches [ 43 , 44 , 38 ] use hidden representations from a
+2
+pre-trained language or machine translation model as auxiliary features while training a supervised
+model on the target task. This involves a substantial amount of new parameters for each separate
+target task, whereas we require minimal changes to our model architecture during transfer.
+Auxiliary training objectives Adding auxiliary unsupervised training objectives is an alternative
+form of semi-supervised learning. Early work by Collobert and Weston [ 10] used a wide variety of
+auxiliary NLP tasks such as POS tagging, chunking, named entity recognition, and language modeling
+to improve semantic role labeling. More recently, Rei [ 50 ] added an auxiliary language modeling
+objective to their target task objective and demonstrated performance gains on sequence labeling
+tasks. Our experiments also use an auxiliary objective, but as we show, unsupervised pre-training
+already learns several linguistic aspects relevant to target tasks.
+3 Framework
+Our training procedure consists of two stages. The first stage is learning a high-capacity language
+model on a large corpus of text. This is followed by a fine-tuning stage, where we adapt the model to
+a discriminative task with labeled data.
+3.1 Unsupervised pre-training
+Given an unsupervised corpus of tokens U = {u1, . . . , un}, we use a standard language modeling
+objective to maximize the following likelihood:
+L1(U) = ∑
+i
+log P (ui|ui−k, . . . , ui−1; Θ) (1)
+where k is the size of the context window, and the conditional probability P is modeled using a neural
+network with parameters Θ. These parameters are trained using stochastic gradient descent [51].
+In our experiments, we use a multi-layer Transformer decoder [34 ] for the language model, which is
+a variant of the transformer [ 62 ]. This model applies a multi-headed self-attention operation over the
+input context tokens followed by position-wise feedforward layers to produce an output distribution
+over target tokens:
+h0 = U We + Wp
+hl = transformer_block(hl−1)∀i ∈ [1, n]
+P (u) = softmax(hnW T
+e )
+(2)
+where U = (u−k, . . . , u−1) is the context vector of tokens, n is the number of layers, We is the token
+embedding matrix, and Wp is the position embedding matrix.
+3.2 Supervised fine-tuning
+After training the model with the objective in Eq. 1, we adapt the parameters to the supervised target
+task. We assume a labeled dataset C, where each instance consists of a sequence of input tokens,
+x1, . . . , xm, along with a label y. The inputs are passed through our pre-trained model to obtain
+the final transformer block’s activation hm
+l , which is then fed into an added linear output layer with
+parameters Wy to predict y:
+P (y|x1, . . . , xm) = softmax(hm
+l Wy ). (3)
+This gives us the following objective to maximize:
+L2(C) = ∑
+(x,y)
+log P (y|x1, . . . , xm). (4)
+We additionally found that including language modeling as an auxiliary objective to the fine-tuning
+helped learning by (a) improving generalization of the supervised model, and (b) accelerating
+convergence. This is in line with prior work [50 , 43 ], who also observed improved performance with
+such an auxiliary objective. Specifically, we optimize the following objective (with weight λ):
+L3(C) = L2(C) + λ ∗ L1(C) (5)
+Overall, the only extra parameters we require during fine-tuning are Wy , and embeddings for delimiter
+tokens (described below in Section 3.3).
+3
