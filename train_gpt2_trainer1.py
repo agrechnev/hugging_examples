@@ -14,7 +14,7 @@ MODEL_NAME = 'gpt2'
 TEXT_CORPUS = 'gpt1_paper.txt'
 DEVICE = 'cuda'
 
-TOKEN_ENDOFTEXT = 50256  # '<|endoftext|>
+TOKEN_ENDOFTEXT = 50256  # <|endoftext|>
 BLOCK_LEN = 512
 DEVICE = 'cuda'
 
