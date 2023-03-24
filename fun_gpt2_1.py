@@ -55,8 +55,28 @@ def demo_no_pipe():
     print(tokenizer.batch_decode(out))
 
 
+########################################################################################################################
+def demo_custom_generate():
+    """Here we demonstrate custom generation (zero-temperature) for simplicity"""
+    # Load model, tokenize input
+    model = transformers.GPT2LMHeadModel.from_pretrained(MODEL_NAME)
+    tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
+    enc = tokenizer(['The elf queen'], return_tensors='pt')
+    input_ids = enc['input_ids']
+
+    # Add one token at a time, in a loop
+    for i in range(20):
+        # print_it(input_ids, 'input_ids')
+        attention_mask = torch.ones(input_ids.shape, dtype=torch.int64)
+        logits = model(input_ids=input_ids, attention_mask=attention_mask)['logits']
+        new_id = logits[:, -1, :].argmax(dim=1)       # Generate new ID
+        input_ids = torch.cat([input_ids, new_id.unsqueeze(0)], dim=1)   # Add new token
+
+    print(tokenizer.batch_decode(input_ids))  # Decode result
+
 
 ########################################################################################################################
 if __name__ == '__main__':
-    demo_pipe()
+    # demo_pipe()
     demo_no_pipe()
+    # demo_custom_generate()
