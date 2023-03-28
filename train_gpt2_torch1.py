@@ -118,8 +118,8 @@ def val_one(model: torch.nn.Module, loader: torch.utils.data.DataLoader):
 ########################################################################################################################
 def main():
     # Load model and tokenizer
-    # model = transformers.GPT2LMHeadModel.from_pretrained(MODEL_NAME)
-    model = transformers.GPT2LMHeadModel(transformers.GPT2Config())
+    model = transformers.GPT2LMHeadModel.from_pretrained(MODEL_NAME)
+    # model = transformers.GPT2LMHeadModel(transformers.GPT2Config())
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
     # Create datasets and loader
@@ -132,7 +132,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # Training loop
-    for i_epoch in range(200):
+    for i_epoch in range(20):
         loss_train = train_one(model, loader_train, optimizer)
         loss_val = val_one(model, loader_val)
         print(f'{i_epoch} : loss_train={loss_train}, loss_val={loss_val}')
