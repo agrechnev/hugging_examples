@@ -101,7 +101,7 @@ def train_one(model: torch.nn.Module, loader: torch.utils.data.DataLoader, optim
 ########################################################################################################################
 def val_one(model: torch.nn.Module, loader: torch.utils.data.DataLoader):
     """Standard PyTorch eval, one epoch"""
-    model.train()
+    model.eval()
     losses = []
     for batch in tqdm.tqdm(loader):
         for k, v in batch.items():
